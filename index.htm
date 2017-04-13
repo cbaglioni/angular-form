@@ -1,0 +1,276 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-messages/1.5.7/angular-messages.min.js"></script>
+  </head>
+
+
+<body>
+
+<div ng-app="app" class="container" >
+
+	<div ng-controller = "mainCtrl" >
+	<div class="row">
+		
+		<div class="col-md-4">
+			<form name="add_user_form" ng-init="user_name=''; user_phone=''" novalidate >
+			
+				<h3 class="text-center text-primary well well-sm" >Registration form</h3>
+				
+				<div class="alert-success text-center" id="message" style="" >{{message}}</div>
+		
+				<div class="form-group" ng-class="{ 'has-error' : add_user_form.user_name.$dirty && add_user_form.user_name.$invalid }">
+					<p class="help-text">First Name</p>
+					<input type="text" class="form-control" id="user_name" name="user_name" placeholder="Name" required ng-model="formData.user_name">
+					<div class="help-block" ng-messages="add_user_form.user_name.$error" ng-if="add_user_form.user_name.$dirty && add_user_form.user_name.$invalid">
+						<p ng-message = "required">This field is required</p>
+					</div>
+				</div>
+
+				<div class="form-group" ng-class="{ 'has-error' : add_user_form.user_phone.$dirty && add_user_form.user_phone.$invalid }">
+					<p class="help-text">Phone Number</p>
+					<input type="text" class="form-control" id="user_phone" name="user_phone" placeholder="Phone" required ng-model="formData.user_phone">
+					<div class="help-block" ng-messages="add_user_form.user_phone.$error" ng-if="add_user_form.user_phone.$dirty  && add_user_form.user_phone.$invalid">
+						<p ng-message = "required">This field is required</p>
+					</div>
+				</div>
+					
+				<div class="form-group" ng-class="{'has-error': add_user_form.user_password.$dirty && add_user_form.user_password.$invalid }">
+					<p class="help-text">Enter password</p>
+					<input type="password" class="form-control" id="user_password" name="user_password" placeholder="password" required ng-model="formData.user_password" password-verify="{{formData.confirm_password}}">
+					<div class="help-block" ng-messages="add_user_form.user_password.$error" ng-if="add_user_form.user_password.$dirty">
+						<p ng-message = "required">This field is required</p>
+						<p ng-message = "passwordVerify">No match!</p>
+					</div>
+				</div>
+					 
+				<div class="form-group" ng-class="{ 'has-error' : add_user_form.confirm_password.$dirty && add_user_form.confirm_password.$invalid }">
+				<p class="help-text">Re-type password</p>
+				<input class="form-control" id="confirm_password" ng-model="formData.confirm_password" name="confirm_password" type="password" placeholder="Confirm Password" required password-verify="{{formData.user_password}}">
+					<div class="help-block" ng-messages="add_user_form.confirm_password.$error" ng-if="add_user_form.confirm_password.$dirty">
+						<p ng-message="required">This field is required</p>
+						<p ng-message="passwordVerify">No match!</p>
+					</div>
+				</div>
+
+				<button class= "btn btn-mg btn-info" ng-click = "reset()"> Reset </button>
+				
+				<button class= "btn btn-mg btn-primary" ng-disabled = "add_user_form.user_name.$invalid  || add_user_form.user_phone.$invalid || add_user_form.user_password.$invalid || add_user_form.confirm_password.$invalid" ng-click = "processForm()" ><span class="glyphicon glyphicon-flash"></span> Submit</button>
+		  
+			</form>
+			
+		</div>
+		
+		<div class="col-md-4">
+		<h3 class="text-center text-primary well well-sm" >Last Registered User</h3>
+			<pre>
+				{{ formData }}
+			</pre>
+			
+			<div class="alert-info"> {{ delId }}</div>
+			
+			
+			<table class="table table-bordered">
+				<tr>
+					<td>Name</td><td>Phone</td><td>Password</td>
+				</tr>
+				<tr ng-repeat="last in value">
+					<td>{{ last.Name }}</td>
+					<td>{{ last.Phone }}</td>
+					<td>{{ last.Password }}</td>
+				</tr>
+			</table>
+		</div>
+			
+		<div class="col-md-4">
+		<h3 class="text-center text-primary well well-sm" >User list</h3>
+			<table class="table table-bordered table-striped">
+				<tr>
+				<td>Name</td> <td>Phone</td> <td>Key</td> <td>Action</td>
+				</tr>
+				<tr ng-repeat="user in values">
+					<td>{{ user.Name }}</td>
+					<td>{{ user.Phone }}</td>
+					<td>{{ user.Password }}</td>
+					<td><button class="btn btn-danger btn-sm" ng-click = "deleteUser( user.Id )">Delete</button></td>
+				</tr>
+			</table>
+		</div>
+		
+	</div>
+		
+	</div>
+	
+	
+</div>
+
+<script>
+  
+  (function() {
+  "use strict";
+  angular.module('app', ['ngMessages'])
+  .controller('mainCtrl', mainCtrl)
+  .directive('passwordVerify', passwordVerify);
+
+  function mainCtrl($scope,$http) {
+  
+	$scope.formData = {};
+	
+	//function for retriving user
+	$scope.getUser = function(){
+  
+		$http({
+		
+			method : 'GET',
+			url : 'get.php'
+			
+		}).then(function mySucces(response) {
+		
+			$scope.values = response.data.records;
+			console.log(response.data.records);
+			
+		}, function myError(response) {
+		
+			$scope.values = response.statusText;
+			
+		});
+	
+    }
+	
+	
+	//function for retriving 'last' user
+	$scope.getLastUser = function(id){
+	
+		$http({
+		
+			method : 'POST',
+			url : 'lastUser.php',
+			data: { recordId:id }
+			
+		}).then(function mySucces(response) {
+		
+			$scope.value = response.data.record;
+			console.log(response.data.record);
+			
+		}, function myError(response) {
+		
+			$scope.value = response.statusText;
+			
+		});
+	
+	}
+    
+	//function for inserting user
+	$scope.processForm = function() {
+	
+		$http({
+			method  : 'POST',
+			url     : 'process.php',
+			data    : $.param($scope.formData),  								// pass in data as strings
+			headers : { 'Content-Type': 'application/x-www-form-urlencoded' }  // set the headers so angular passing info as form data (not request payload)
+		})
+		.success(function(data) {
+		
+		console.log(data);
+
+		if (!data.success) {
+		
+		  // if not successful, bind errors to error variables
+		  $scope.user_name = data.errors.user_name;
+		  $scope.user_phone = data.errors.user_phone;
+		  
+		} else {
+		
+		  // if successful, bind success message to message
+		  $scope.message = data.message;
+		  //$scope.lastID = data.lastId;
+		  $scope.getLastUser( data.lastId );
+		  $scope.getUser();
+		  $scope.reset();
+		  
+		}
+	  });
+	
+    }
+	
+	//function for deleting user
+	$scope.deleteUser = function( dId ){
+		
+		$http({
+		
+			method	: 'POST',
+			url		:'delUser.php',
+			data	: { recordId : dId }
+		
+		}).then(function successful(response){
+			
+				$scope.message = response.message;
+				$scope.getUser();
+			
+			},function errors(response){
+			
+				
+			
+			}
+		)
+	
+	}
+	
+	//function for reset user
+	$scope.reset = function(){
+		
+		$scope.formData = {};
+		
+	}
+	
+	//get users
+	$scope.getUser();
+  
+};
+
+
+  function passwordVerify() {
+    return {
+      restrict: 'A', // only activate on element attribute
+      require: '?ngModel', // get a hold of NgModelController
+      link: function(scope, elem, attrs, ngModel) {
+        if (!ngModel) return; // do nothing if no ng-model
+
+        // watch own value and re-validate on change
+        scope.$watch(attrs.ngModel, function() {
+          validate();
+        });
+
+        // observe the other value and re-validate on change
+        attrs.$observe('passwordVerify', function(val) {
+          validate();
+        });
+
+        var validate = function() {
+          // values
+          var val1 = ngModel.$viewValue;
+          var val2 = attrs.passwordVerify;
+
+          // set validity
+          ngModel.$setValidity('passwordVerify', val1 === val2);
+        };
+      }
+    }
+  }
+})();
+  
+</script>
+<!--
+help Links:
+http://stackoverflow.com/questions/38539417/validating-password-and-confirm-password-fields-whenever-one-or-the-other-fields
+http://phpenthusiast.com/blog/ajax-with-angular-and-php
+https://scotch.io/tutorials/submitting-ajax-forms-the-angularjs-way
+http://phpenthusiast.com/blog/ajax-with-angular-and-php
+-->
+</body>
+</html>
